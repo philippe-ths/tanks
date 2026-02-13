@@ -19,6 +19,7 @@ export function createLocalTankApi(ctx) {
 
   /** @type {((value?: any) => void) | null} */
   let _pendingResolve = null;
+  let _onActionStart = null;
 
   // ── Timed action helper ──────────────────────────────────
 
@@ -27,6 +28,8 @@ export function createLocalTankApi(ctx) {
     if (!accepted) {
       return Promise.resolve(isScan ? false : undefined);
     }
+
+    if (_onActionStart) _onActionStart();
 
     return new Promise((resolve) => {
       _pendingResolve = () => {
@@ -81,6 +84,10 @@ export function createLocalTankApi(ctx) {
     },
     _hasPending: {
       get() { return _pendingResolve !== null; },
+      enumerable: false,
+    },
+    _onActionStart: {
+      set(fn) { _onActionStart = fn; },
       enumerable: false,
     },
   });

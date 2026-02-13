@@ -192,14 +192,21 @@ export function startPlayerLoop(loopFn, tankApi, options = {}) {
    */
   async function run() {
     while (running) {
+      // Watchdog timer: resets every time player code starts a new
+      // action, so the timeout only fires if the code makes no progress
+      // (e.g. infinite synchronous loop without any `await`).
+      const watchdog = createWatchdog(timeoutMs);
+      tankApi._onActionStart = () => watchdog.reset();
+
       try {
-        // Race the player's loop() call against a wall-clock timeout
-        // and the stop signal.
         const result = await Promise.race([
           loopFn(tankApi),
-          timeoutPromise(timeoutMs),
+          watchdog.promise,
           stopPromise,
         ]);
+
+        watchdog.clear();
+        tankApi._onActionStart = null;
 
         // If the stop promise resolved, result is "stopped"
         if (result === "__stopped__") {
@@ -217,6 +224,8 @@ export function startPlayerLoop(loopFn, tankApi, options = {}) {
 
         // Otherwise loop() completed normally — call it again.
       } catch (err) {
+        watchdog.clear();
+        tankApi._onActionStart = null;
         running = false;
         error = `Runtime error: ${err.message}`;
         if (onError) onError(error);
@@ -250,12 +259,28 @@ export function startPlayerLoop(loopFn, tankApi, options = {}) {
 // ── Helpers ────────────────────────────────────────────────────────────
 
 /**
- * Returns a Promise that resolves with a sentinel after `ms` milliseconds.
- * @param {number} ms
- * @returns {Promise<string>}
+ * Create a resettable watchdog timer.
+ * Resolves with "__timeout__" if not reset within `ms` milliseconds.
+ * Call `reset()` each time the player makes progress (starts a new action).
+ * Call `clear()` when the loop() call completes normally.
  */
-function timeoutPromise(ms) {
-  return new Promise((resolve) => {
-    setTimeout(() => resolve("__timeout__"), ms);
+function createWatchdog(ms) {
+  let timer = null;
+  let resolve = null;
+
+  const promise = new Promise((r) => {
+    resolve = r;
+    timer = setTimeout(() => r("__timeout__"), ms);
   });
+
+  return {
+    promise,
+    reset() {
+      clearTimeout(timer);
+      timer = setTimeout(() => resolve("__timeout__"), ms);
+    },
+    clear() {
+      clearTimeout(timer);
+    },
+  };
 }
