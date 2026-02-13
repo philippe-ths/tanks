@@ -73,13 +73,21 @@ export function createWorld(seed, constants, players) {
   const radius = Math.min(cx, cy) * 0.55;
   const angleOffset = rng() * Math.PI * 2; // random rotation of spawn ring
 
-  const tanks = {};
+  // Compute spawn positions first so we can check headings against them
+  const spawnPositions = [];
   for (let i = 0; i < n; i++) {
     const angle = angleOffset + (2 * Math.PI * i) / n;
-    const x = cx + Math.cos(angle) * radius;
-    const y = cy + Math.sin(angle) * radius;
-    // Face toward the center of the arena
-    const headingDeg = ((angle * 180 / Math.PI) + 180) % 360;
+    spawnPositions.push({
+      x: cx + Math.cos(angle) * radius,
+      y: cy + Math.sin(angle) * radius,
+    });
+  }
+
+  const tanks = {};
+  for (let i = 0; i < n; i++) {
+    const { x, y } = spawnPositions[i];
+    // Pick a random heading that doesn't point at any other tank (±30°)
+    const headingDeg = pickSafeHeading(rng, x, y, spawnPositions, i);
 
     tanks[players[i].slot] = createTank(
       players[i].slot, x, y, headingDeg,
@@ -153,4 +161,47 @@ function createTank(slot, x, y, headingDeg, tankType, constants) {
  */
 export function nextProjId() {
   return `proj_${_idCounter++}`;
+}
+
+// ── Spawn heading helper ───────────────────────────────────
+
+/**
+ * Pick a random heading that doesn't point at any other spawn position.
+ * "Pointing at" means the bearing to any opponent is within ±EXCLUSION_DEG
+ * of the heading.  After MAX_ATTEMPTS we accept whatever we have.
+ *
+ * @param {Function} rng          – seeded PRNG returning [0,1)
+ * @param {number}   x            – this tank's spawn x
+ * @param {number}   y            – this tank's spawn y
+ * @param {{ x: number, y: number }[]} positions – all spawn positions
+ * @param {number}   selfIndex    – index of this tank in positions[]
+ * @returns {number} heading in [0, 360)
+ */
+function pickSafeHeading(rng, x, y, positions, selfIndex) {
+  const EXCLUSION_DEG = 30;
+  const MAX_ATTEMPTS = 20;
+
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    const heading = rng() * 360;
+    let safe = true;
+
+    for (let j = 0; j < positions.length; j++) {
+      if (j === selfIndex) continue;
+      const dx = positions[j].x - x;
+      const dy = positions[j].y - y;
+      const bearingDeg = ((Math.atan2(dy, dx) * 180 / Math.PI) % 360 + 360) % 360;
+      let diff = bearingDeg - heading;
+      // Normalize to [-180, 180]
+      diff = ((diff + 180) % 360 + 360) % 360 - 180;
+      if (Math.abs(diff) < EXCLUSION_DEG) {
+        safe = false;
+        break;
+      }
+    }
+
+    if (safe) return heading;
+  }
+
+  // Fallback: just return the last random value
+  return rng() * 360;
 }
