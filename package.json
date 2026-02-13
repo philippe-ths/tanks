@@ -1,0 +1,16 @@
+{
+  "name": "tanks",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "host": "npm run start --workspace=server",
+    "dev": "npm run dev --workspace=client",
+    "build": "npm run build --workspace=client",
+    "preview": "npm run preview --workspace=client"
+  }
+}

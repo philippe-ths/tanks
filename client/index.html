@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tanks</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div id="app">
+    <h1>Tanks</h1>
+    <p id="status"></p>
+
+    <!-- ── Landing page ── -->
+    <div id="landing">
+      <div class="landing-grid">
+
+        <!-- Host Game card -->
+        <div class="card">
+          <h2>Host a Game</h2>
+          <p class="hint">Start a game that others on your network can join.</p>
+          <div class="field-row">
+            <label for="server-name">Server name:</label>
+            <input type="text" id="server-name" placeholder="My Server" />
+          </div>
+          <button id="btn-host">Host Game</button>
+        </div>
+
+        <!-- Join Game card -->
+        <div class="card">
+          <h2>Join a Game</h2>
+          <p class="hint">Find and connect to a server on your local network.</p>
+          <div id="server-list" class="server-list">
+            <p class="hint">Searching for servers…</p>
+          </div>
+          <div class="field-row">
+            <label for="join-address">Or enter address:</label>
+            <input type="text" id="join-address" placeholder="192.168.1.5:3000" />
+          </div>
+          <button id="btn-join-manual">Connect</button>
+        </div>
+
+        <!-- Local Test card -->
+        <div class="card">
+          <h2>Local Test</h2>
+          <p class="hint">Run your <code>tank.js</code> against a built-in bot — no server needed.</p>
+          <div class="file-row">
+            <label for="local-file">Select your <code>tank.js</code>:</label>
+            <input type="file" id="local-file" accept=".js" />
+          </div>
+          <p id="local-msg" class="upload-msg"></p>
+          <button id="btn-local" disabled>Run vs Bot</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Lobby (shown after hosting or joining) ── -->
+    <div id="lobby" class="lobby hidden">
+      <h2 id="lobby-title">Lobby</h2>
+      <p id="your-slot"></p>
+      <table id="slot-table">
+        <thead>
+          <tr><th>Slot</th><th>Player</th><th>Code</th><th>Type</th></tr>
+        </thead>
+        <tbody id="slot-tbody">
+          <!-- Rows added dynamically -->
+        </tbody>
+      </table>
+
+      <div id="upload-section" class="upload-section">
+        <div class="file-row">
+          <label for="tank-file">Upload your <code>tank.js</code>:</label>
+          <input type="file" id="tank-file" accept=".js" />
+        </div>
+        <p id="upload-msg" class="upload-msg"></p>
+      </div>
+
+      <div class="lobby-buttons">
+        <button id="btn-start" disabled>Start Match</button>
+        <button id="btn-back" class="btn-secondary">← Back</button>
+      </div>
+    </div>
+
+    <!-- ── Match arena (hidden until match starts) ── -->
+    <div id="arena-container" class="arena-container hidden">
+      <canvas id="arena-canvas"></canvas>
+      <div class="arena-controls">
+        <button id="btn-reset" class="btn-reset">Reset Match</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error toast container (fixed overlay) -->
+  <div id="error-toast-container" class="error-toast-container"></div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,370 @@
+/* client/src/style.css – minimal baseline */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #1a1a2e;
+  color: #e0e0e0;
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+}
+
+#app {
+  max-width: 900px;
+  width: 100%;
+}
+
+h1 {
+  margin-bottom: 0.5rem;
+}
+
+#status {
+  color: #888;
+  font-size: 0.9rem;
+  min-height: 1.2em;
+}
+
+/* ── Landing page ──────────────────────────── */
+
+.landing-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.landing-grid .card:last-child {
+  grid-column: 1 / -1;
+}
+
+.card {
+  background: #16213e;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.card h2 {
+  margin-bottom: 0.5rem;
+  font-size: 1.15rem;
+}
+
+.card .hint {
+  color: #888;
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.field-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.field-row label {
+  white-space: nowrap;
+  font-size: 0.9rem;
+}
+
+.field-row input[type="text"] {
+  flex: 1;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #1a1a2e;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+}
+
+#btn-host,
+#btn-join-manual {
+  padding: 0.5rem 1.2rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+  background: #0f3460;
+  color: #e0e0e0;
+  border: 1px solid #555;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+#btn-host:hover,
+#btn-join-manual:hover {
+  background: #1a4a80;
+}
+
+/* ── Server list ────────────────────────────── */
+
+.server-list {
+  margin-bottom: 0.75rem;
+  max-height: 160px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.server-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  background: #1a1a2e;
+  border: 1px solid #333;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+  transition: background 0.15s, border-color 0.15s;
+  width: 100%;
+  text-align: left;
+}
+
+.server-entry:hover {
+  background: #0f3460;
+  border-color: #3498db;
+}
+
+.server-name {
+  font-weight: 600;
+}
+
+.server-info {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+/* ── Lobby ───────────────────────────────────── */
+
+.hidden {
+  display: none !important;
+}
+
+.lobby {
+  margin-top: 1.5rem;
+}
+
+.lobby h2 {
+  margin-bottom: 0.75rem;
+}
+
+.lobby-buttons {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.btn-secondary {
+  padding: 0.5rem 1.2rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  background: transparent;
+  color: #aaa;
+  border: 1px solid #555;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.btn-secondary:hover {
+  background: #2a2a3e;
+}
+
+#your-slot {
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+#slot-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+#slot-table th,
+#slot-table td {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #333;
+  text-align: left;
+}
+
+#slot-table thead {
+  background: #16213e;
+}
+
+#btn-start {
+  padding: 0.5rem 1.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  background: #0f3460;
+  color: #e0e0e0;
+  border: 1px solid #555;
+  border-radius: 4px;
+}
+
+#btn-start:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Upload section ─────────────────────────── */
+
+.upload-section {
+  margin-bottom: 1rem;
+}
+
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.upload-msg {
+  font-size: 0.85rem;
+  min-height: 1.2em;
+}
+
+.upload-msg.error {
+  color: #e74c3c;
+}
+
+.upload-msg.success {
+  color: #2ecc71;
+}
+
+/* ── Local Test ──────────────────────────────── */
+
+.local-test {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #333;
+}
+
+.local-test h2 {
+  margin-bottom: 0.5rem;
+}
+
+.local-test .hint {
+  color: #888;
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+#btn-local {
+  padding: 0.5rem 1.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  background: #1a6b3c;
+  color: #e0e0e0;
+  border: 1px solid #555;
+  border-radius: 4px;
+}
+
+#btn-local:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Arena ───────────────────────────────────── */
+
+.arena-container {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#arena-canvas {
+  border: 1px solid #334;
+  border-radius: 4px;
+  background: #0e0e1a;
+}
+
+.arena-controls {
+  margin-top: 0.75rem;
+}
+
+.btn-reset {
+  padding: 0.4rem 1.2rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  background: #6b1a1a;
+  color: #e0e0e0;
+  border: 1px solid #933;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.btn-reset:hover {
+  background: #8b2a2a;
+}
+
+/* ── Error Toast ─────────────────────────────── */
+
+.error-toast-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 420px;
+  pointer-events: none;
+}
+
+.error-toast {
+  background: #2d1215;
+  border: 1px solid #e74c3c;
+  border-left: 4px solid #e74c3c;
+  color: #f1c0c0;
+  padding: 0.6rem 1rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  pointer-events: auto;
+  animation: toast-in 0.25s ease-out;
+  word-break: break-word;
+}
+
+.error-toast.warning {
+  background: #2d2412;
+  border-color: #e6a817;
+  border-left-color: #e6a817;
+  color: #f1e0a0;
+}
+
+.error-toast.info {
+  background: #12202d;
+  border-color: #3498db;
+  border-left-color: #3498db;
+  color: #a0c8f1;
+}
+
+.error-toast .toast-title {
+  font-weight: 700;
+  margin-bottom: 0.15rem;
+}
+
+.error-toast.fade-out {
+  animation: toast-out 0.3s ease-in forwards;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(30px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toast-out {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(30px); }
+}
