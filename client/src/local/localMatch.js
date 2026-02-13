@@ -10,11 +10,17 @@
  * ── Usage ────────────────────────────────────────────────────────────────
  *   import { startLocalMatch } from "./local/localMatch.js";
  *
+ *   // vs built-in bot (default):
  *   const match = startLocalMatch(playerCodeString, {
  *     onState(snapshot)    { renderer.setState(snapshot); },
  *     onMatchStart(info)   { renderer.setMatchInfo(info); },
  *     onMatchEnd(result)   { … },
  *     onLog(slot, msg)     { console.log(`[${slot}] ${msg}`); },
+ *   });
+ *
+ *   // vs custom opponent bots:
+ *   const match = startLocalMatch(playerCodeString, callbacks, {
+ *     opponents: [botCode1, botCode2],
  *   });
  *
  *   // To abort early:
@@ -33,57 +39,53 @@ import { BOT_CODE } from "./bot.js";
 // ── Public API ─────────────────────────────────────────────────────────
 
 /**
- * Start a local match: player code (p1) vs built-in bot (p2).
+ * Start a local match: player code (p1) vs one or more opponents.
  *
  * @param {string} playerCode – raw ESM source of the player's tank.js
  * @param {Object} callbacks
  * @param {(snapshot: Object) => void} [callbacks.onState]
- *   Called at ~20 Hz with a state snapshot (same shape as server MSG_STATE).
  * @param {(info: Object) => void} [callbacks.onMatchStart]
- *   Called once at match start with tank type metadata.
  * @param {(result: Object) => void} [callbacks.onMatchEnd]
- *   Called once when the match ends with { winner, reason }.
  * @param {(slot: string, msg: string) => void} [callbacks.onLog]
- *   Called when player or bot calls tank.log().
  * @param {(slot: string, msg: string) => void} [callbacks.onError]
- *   Called when a player runtime error occurs.
+ * @param {Object} [options]
+ * @param {string[]} [options.opponents] – opponent code strings; defaults to [BOT_CODE]
  * @returns {{ stop: () => void, running: boolean }}
  */
-export function startLocalMatch(playerCode, callbacks = {}) {
+export function startLocalMatch(playerCode, callbacks = {}, options = {}) {
   const { onState, onMatchStart, onMatchEnd, onLog, onError } = callbacks;
+  const opponentCodes = options.opponents ?? [BOT_CODE];
 
-  // ── 1. Load & validate both code strings ─────────────────
+  // ── 1. Load & validate all code strings ──────────────────
 
-  const player = loadPlayerCode(playerCode);
-  const bot = loadPlayerCode(BOT_CODE);
+  const loaded = [
+    { slot: "p1", ...loadPlayerCode(playerCode) },
+  ];
+
+  for (let i = 0; i < opponentCodes.length; i++) {
+    const slot = `p${i + 2}`;
+    loaded.push({ slot, ...loadPlayerCode(opponentCodes[i]) });
+  }
 
   // ── 2. Create world ──────────────────────────────────────
 
   const seed = Date.now();
-  const players = [
-    { slot: "p1", tankType: player.tankType },
-    { slot: "p2", tankType: bot.tankType },
-  ];
+  const players = loaded.map((p) => ({ slot: p.slot, tankType: p.tankType }));
   const world = createWorld(seed, CONSTANTS, players);
 
   // ── 3. Create Tank API objects ───────────────────────────
 
-  const tankApis = {
-    p1: createLocalTankApi({
+  /** @type {Record<string, Object>} */
+  const tankApis = {};
+  for (const p of loaded) {
+    tankApis[p.slot] = createLocalTankApi({
       world,
-      slot: "p1",
-      onLog: onLog ? (msg) => onLog("p1", msg) : undefined,
-    }),
-    p2: createLocalTankApi({
-      world,
-      slot: "p2",
-      onLog: onLog ? (msg) => onLog("p2", msg) : undefined,
-    }),
-  };
+      slot: p.slot,
+      onLog: onLog ? (msg) => onLog(p.slot, msg) : undefined,
+    });
+  }
 
   // ── 4. Action resolver (inline) ──────────────────────────
-  // Identical to server/src/runtime/actionResolver.js but kept
-  // inline to avoid an extra file for a small function.
 
   function resolveActions(events) {
     for (const evt of events) {
@@ -103,13 +105,11 @@ export function startLocalMatch(playerCode, callbacks = {}) {
   // ── 5. Notify match start ────────────────────────────────
 
   if (onMatchStart) {
-    onMatchStart({
-      seed,
-      tanks: {
-        p1: { tankType: player.tankType },
-        p2: { tankType: bot.tankType },
-      },
-    });
+    const tanks = {};
+    for (const p of loaded) {
+      tanks[p.slot] = { tankType: p.tankType };
+    }
+    onMatchStart({ seed, tanks });
   }
 
   // ── 6. Start sim loop ────────────────────────────────────
@@ -125,7 +125,6 @@ export function startLocalMatch(playerCode, callbacks = {}) {
     onTick(events) {
       resolveActions(events);
 
-      // Throttled state callback (~20 Hz)
       tickCount++;
       if (tickCount >= ticksPerBroadcast && onState) {
         tickCount = 0;
@@ -141,22 +140,26 @@ export function startLocalMatch(playerCode, callbacks = {}) {
 
   // ── 7. Start player runtimes ─────────────────────────────
 
-  const runtimes = {
-    p1: startPlayerLoop(player.loopFn, tankApis.p1, {
+  /** @type {Record<string, Object>} */
+  const runtimes = {};
+
+  for (const p of loaded) {
+    const pSlot = p.slot;
+    runtimes[pSlot] = startPlayerLoop(p.loopFn, tankApis[pSlot], {
       onError(msg) {
-        console.error(`[local p1] ${msg}`);
-        if (onError) onError("p1", msg);
-        if (matchRunning) cleanup("p2", "forfeit", `P1: ${msg}`);
+        console.error(`[local ${pSlot}] ${msg}`);
+        if (onError) onError(pSlot, msg);
+        // Kill this tank
+        world.tanks[pSlot].hp = 0;
+        // Check if only one tank remains
+        const alive = Object.entries(world.tanks).filter(([, t]) => t.hp > 0);
+        if (alive.length <= 1 && matchRunning) {
+          const winner = alive.length === 1 ? alive[0][0] : null;
+          cleanup(winner, "forfeit", `${pSlot.toUpperCase()}: ${msg}`);
+        }
       },
-    }),
-    p2: startPlayerLoop(bot.loopFn, tankApis.p2, {
-      onError(msg) {
-        console.error(`[local bot] ${msg}`);
-        if (onError) onError("p2", msg);
-        if (matchRunning) cleanup("p1", "forfeit", `Bot: ${msg}`);
-      },
-    }),
-  };
+    });
+  }
 
   // ── Cleanup ──────────────────────────────────────────────
 
@@ -165,8 +168,9 @@ export function startLocalMatch(playerCode, callbacks = {}) {
     matchRunning = false;
 
     simLoop.stop();
-    runtimes.p1.stop();
-    runtimes.p2.stop();
+    for (const r of Object.values(runtimes)) {
+      r.stop();
+    }
 
     const result = { winner, reason };
     if (detail) result.detail = detail;

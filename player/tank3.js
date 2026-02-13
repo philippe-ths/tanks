@@ -24,21 +24,15 @@ export const tankType = "heavy";
 
 export default async function loop(tank) {
 
-  if ( await tank.scan(0, 180) ) {
-    await tank.turnRight(90);
-  } else if ( await tank.scan(-180, 0) ) {
-    await tank.turnLeft(90);
-  } 
-
   if ( await tank.scan(-30, 30) ) {
     tank.shoot();
-  }
-
-  if ( await tank.scan(-90, 90) ) {
-    await tank.moveForward();
   } else {
-    await tank.moveBackward();
-    await tank.turnRight(180);
+    if ( await tank.scan(0, 180) ) {
+      await tank.turnRight(90);
+    } else {
+      await tank.turnLeft(90);
+    }
+
   }
 
 }

@@ -416,6 +416,36 @@ if (btnBack) {
 
 // ── Local test mode ────────────────────────────────────────
 
+// ── Local test mode ────────────────────────────────────────
+
+/** @type {{ name: string, code: string }[]} */
+let customBots = [];
+let opponentMode = "bot"; // "bot" | "custom"
+
+const botFilesInput = document.getElementById("bot-files");
+const botListEl = document.getElementById("bot-list");
+const botMsgEl = document.getElementById("bot-msg");
+const customBotsSection = document.getElementById("custom-bots-section");
+const opponentRadios = document.querySelectorAll('input[name="opponent-mode"]');
+
+// ── Opponent mode toggle ───────────────────────────────────
+
+for (const radio of opponentRadios) {
+  radio.addEventListener("change", (e) => {
+    opponentMode = /** @type {HTMLInputElement} */ (e.target).value;
+    if (customBotsSection) {
+      customBotsSection.classList.toggle("hidden", opponentMode !== "custom");
+    }
+    if (btnLocal) {
+      btnLocal.textContent =
+        opponentMode === "custom" ? "Run Match" : "Run vs Bot";
+    }
+    updateLocalButton();
+  });
+}
+
+// ── Player file input ──────────────────────────────────────
+
 if (localFileInput) {
   localFileInput.addEventListener("change", async () => {
     const file = localFileInput.files?.[0];
@@ -423,14 +453,98 @@ if (localFileInput) {
     try {
       localCode = await file.text();
       showLocalMsg(`Loaded ${file.name} (${localCode.length} bytes)`, false);
-      if (btnLocal) btnLocal.disabled = false;
     } catch (err) {
       showLocalMsg(`❌ Failed to read file: ${err.message}`, true);
       localCode = null;
-      if (btnLocal) btnLocal.disabled = true;
     }
+    updateLocalButton();
   });
 }
+
+// ── Bot file input (multi) ─────────────────────────────────
+
+if (botFilesInput) {
+  botFilesInput.addEventListener("change", async () => {
+    const files = botFilesInput.files;
+    if (!files || files.length === 0) return;
+
+    for (const file of files) {
+      try {
+        const code = await file.text();
+        // Validate that it parses (has tankType + loop)
+        // We do a quick regex check here; full validation happens at match start
+        if (!/export\s+const\s+tankType/.test(code)) {
+          showBotMsg(`❌ ${file.name}: missing tankType export`, true);
+          continue;
+        }
+        customBots.push({ name: file.name, code });
+      } catch (err) {
+        showBotMsg(`❌ Failed to read ${file.name}: ${err.message}`, true);
+      }
+    }
+
+    // Clear the input so the same file(s) can be re-added
+    botFilesInput.value = "";
+    renderBotList();
+    updateLocalButton();
+  });
+}
+
+function renderBotList() {
+  if (!botListEl) return;
+  botListEl.innerHTML = "";
+  for (let i = 0; i < customBots.length; i++) {
+    const bot = customBots[i];
+    const li = document.createElement("li");
+
+    // Extract tank type for display
+    const typeMatch = bot.code.match(/export\s+const\s+tankType\s*=\s*["']([^"']+)["']/);
+    const typeLabel = typeMatch ? typeMatch[1] : "?";
+
+    li.innerHTML = `
+      <span><span class="bot-name">${escHtml(bot.name)}</span><span class="bot-type">(${escHtml(typeLabel)})</span></span>
+    `;
+    const btn = document.createElement("button");
+    btn.className = "btn-remove";
+    btn.textContent = "✕";
+    btn.title = "Remove";
+    btn.addEventListener("click", () => {
+      customBots.splice(i, 1);
+      renderBotList();
+      updateLocalButton();
+    });
+    li.appendChild(btn);
+    botListEl.appendChild(li);
+  }
+  if (customBots.length > 0) {
+    showBotMsg(`${customBots.length} bot${customBots.length > 1 ? "s" : ""} loaded`, false);
+  } else {
+    showBotMsg("", false);
+  }
+}
+
+function updateLocalButton() {
+  if (!btnLocal) return;
+  if (!localCode) {
+    btnLocal.disabled = true;
+    return;
+  }
+  if (opponentMode === "custom") {
+    // Need at least 1 custom bot (2 total participants)
+    btnLocal.disabled = customBots.length < 1;
+  } else {
+    btnLocal.disabled = false;
+  }
+}
+
+function showBotMsg(text, isError) {
+  if (!botMsgEl) return;
+  botMsgEl.textContent = text;
+  botMsgEl.classList.toggle("error", isError);
+  botMsgEl.classList.toggle("success", !isError);
+}
+
+// ── Run local match ────────────────────────────────────────
 
 if (btnLocal) {
   btnLocal.addEventListener("click", () => {
@@ -439,6 +553,11 @@ if (btnLocal) {
 
     showArena();
     if (!renderer && arenaCanvas) renderer = createRenderer(arenaCanvas);
+
+    const matchOptions = {};
+    if (opponentMode === "custom" && customBots.length > 0) {
+      matchOptions.opponents = customBots.map((b) => b.code);
+    }
 
     try {
       localMatch = startLocalMatch(localCode, {
@@ -455,7 +574,7 @@ if (btnLocal) {
         },
         onLog(slotName, msg) { console.log(`[${slotName}] ${msg}`); },
         onError(slotName, msg) { showToast(`${slotName.toUpperCase()} Runtime Error`, msg); },
-      });
+      }, matchOptions);
       showLocalMsg("", false);
     } catch (err) {
       console.error("[local] Failed to start match:", err);
