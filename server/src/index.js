@@ -3,14 +3,17 @@ import { createServer } from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { WebSocketServer } from "ws";
-import { addClient, removeClient, send } from "./connectionManager.js";
+import { addClient, removeClient, send, broadcast, disconnectAll } from "./connectionManager.js";
 import {
   joinLobby, leaveLobby, broadcastLobby,
-  getSlotForClient, setCode, getHostSlot,
-  setServerName, getServerName, getLobbyInfo,
+  getSlotForClient, setCode, clearCode, getSlot, getHostSlot,
+  setServerName, getServerName, getLobbyInfo, resetLobby,
 } from "./lobby.js";
 import { tryStartMatch, stopMatch, isMatchRunning } from "./match/matchManager.js";
-import { MSG_JOIN, MSG_SUBMIT_TANK, MSG_READY, MSG_RESET_MATCH, MSG_ERROR } from "../../shared/protocol.js";
+import {
+  MSG_JOIN, MSG_SUBMIT_TANK, MSG_READY, MSG_RESET_MATCH,
+  MSG_KICK, MSG_CLOSE_LOBBY, MSG_CLEAR_TANK, MSG_LOBBY_CLOSED, MSG_ERROR,
+} from "../../shared/protocol.js";
 import { CONSTANTS } from "../../shared/constants.js";
 import {
   startListening, startBroadcasting, stopBroadcasting,
@@ -123,6 +126,18 @@ function handleMessage(ws, msg) {
       handleResetMatch(ws);
       break;
 
+    case MSG_KICK:
+      handleKick(ws, msg);
+      break;
+
+    case MSG_CLOSE_LOBBY:
+      handleCloseLobby(ws);
+      break;
+
+    case MSG_CLEAR_TANK:
+      handleClearTank(ws);
+      break;
+
     default:
       console.log(`[msg] unknown type "${msg.type}" from ${ws.clientId}`);
   }
@@ -186,6 +201,73 @@ function handleResetMatch(ws) {
 
   console.log(`[msg] resetMatch from ${ws.clientId} (${slotName})`);
   stopMatch();
+  broadcastLobby();
+}
+
+/**
+ * Handle a kick request. Only the host can kick other players.
+ * @param {import("ws").WebSocket} ws
+ * @param {Object} msg
+ */
+function handleKick(ws, msg) {
+  const senderSlot = getSlotForClient(ws.clientId);
+  const hostSlot = getHostSlot();
+
+  if (senderSlot !== hostSlot) {
+    send(ws, { type: MSG_ERROR, message: "Only the host can kick players." });
+    return;
+  }
+
+  const { targetSlot } = msg;
+  if (typeof targetSlot !== "string" || targetSlot === senderSlot) {
+    send(ws, { type: MSG_ERROR, message: "Invalid kick target." });
+    return;
+  }
+
+  const target = getSlot(targetSlot);
+  if (!target) {
+    send(ws, { type: MSG_ERROR, message: `Slot "${targetSlot}" is empty.` });
+    return;
+  }
+
+  console.log(`[msg] kick ${targetSlot} (${target.clientId}) by host ${senderSlot}`);
+  send(target.ws, { type: MSG_ERROR, message: "You have been kicked from the lobby." });
+  target.ws.close();
+}
+
+/**
+ * Handle a close-lobby request. Only the host can close the lobby.
+ * @param {import("ws").WebSocket} ws
+ */
+function handleCloseLobby(ws) {
+  const senderSlot = getSlotForClient(ws.clientId);
+  const hostSlot = getHostSlot();
+
+  if (senderSlot !== hostSlot) {
+    send(ws, { type: MSG_ERROR, message: "Only the host can close the lobby." });
+    return;
+  }
+
+  console.log(`[msg] closeLobby by host ${senderSlot}`);
+  if (isMatchRunning()) stopMatch();
+  broadcast({ type: MSG_LOBBY_CLOSED });
+  stopBroadcasting();
+  resetLobby();
+  disconnectAll();
+}
+
+/**
+ * Handle a clear-tank request. Removes the player's uploaded code.
+ * @param {import("ws").WebSocket} ws
+ */
+function handleClearTank(ws) {
+  const slotName = getSlotForClient(ws.clientId);
+  if (slotName === "spectator") {
+    send(ws, { type: MSG_ERROR, message: "Spectators have no code to clear." });
+    return;
+  }
+  clearCode(slotName);
+  console.log(`[msg] clearTank from ${ws.clientId} (${slotName})`);
   broadcastLobby();
 }
 

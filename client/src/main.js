@@ -41,6 +41,7 @@ let ws = null;
 let clientId = null;
 let slot = null;
 let lobbyPlayers = [];
+let lobbyHostSlot = null;
 let renderer = null;
 let localMatch = null;
 let localCode = null;
@@ -67,6 +68,9 @@ const btnJoinManual = document.getElementById("btn-join-manual");
 const joinAddressInput = document.getElementById("join-address");
 const serverListEl = document.getElementById("server-list");
 const btnBack     = document.getElementById("btn-back");
+const btnCloseLobby = document.getElementById("btn-close-lobby");
+const btnClearTank = document.getElementById("btn-clear-tank");
+const btnClearLocal = document.getElementById("btn-clear-local");
 const localFileInput = document.getElementById("local-file");
 const localMsgEl  = document.getElementById("local-msg");
 const btnLocal    = document.getElementById("btn-local");
@@ -145,6 +149,7 @@ function handleMessage(msg) {
     case "lobby":
       console.log("[lobby]", msg);
       lobbyPlayers = msg.players ?? [];
+      lobbyHostSlot = msg.hostSlot ?? null;
       if (msg.serverName && lobbyTitle) {
         lobbyTitle.textContent = `Lobby — ${msg.serverName}`;
       }
@@ -182,6 +187,12 @@ function handleMessage(msg) {
       }
       const delay = msg.reason === "aborted" ? 500 : 4000;
       setTimeout(() => returnToLobby(), delay);
+      break;
+
+    case "lobbyClosed":
+      console.log("[lobbyClosed]");
+      showToast("Lobby Closed", "The host closed the lobby.", "warning", 4000);
+      showLanding();
       break;
   }
 }
@@ -238,6 +249,10 @@ function renderLobby() {
   }
 
   // Rebuild table body
+  const isHost = slot && slot === lobbyHostSlot;
+  const thAction = document.getElementById("th-action");
+  if (thAction) thAction.textContent = isHost ? "" : "";
+
   slotTbody.innerHTML = "";
   for (const p of lobbyPlayers) {
     const tr = document.createElement("tr");
@@ -246,13 +261,34 @@ function renderLobby() {
       <td>${escHtml(p.name)}</td>
       <td>${p.hasCode ? "✅" : "❌"}</td>
       <td>${p.tankType ?? "—"}</td>
+      <td>${isHost && p.slot !== slot ? `<button class="btn-kick" data-slot="${p.slot}" title="Kick player">✕</button>` : ""}</td>
     `;
     slotTbody.appendChild(tr);
+  }
+
+  // Attach kick handlers
+  if (isHost) {
+    for (const btn of slotTbody.querySelectorAll(".btn-kick")) {
+      btn.addEventListener("click", () => {
+        sendMsg({ type: "kick", targetSlot: btn.dataset.slot });
+      });
+    }
   }
 
   // Enable start when ≥ 2 players have code
   const readyCount = lobbyPlayers.filter((p) => p.hasCode).length;
   if (btnStart) btnStart.disabled = readyCount < 2;
+
+  // Show/hide host-only close lobby button
+  if (btnCloseLobby) {
+    btnCloseLobby.classList.toggle("hidden", !isHost);
+  }
+
+  // Show/hide clear-tank button based on upload status
+  if (btnClearTank) {
+    const me = lobbyPlayers.find((p) => p.slot === slot);
+    btnClearTank.classList.toggle("hidden", !me?.hasCode);
+  }
 }
 
 // ── Host flow ──────────────────────────────────────────────
@@ -392,6 +428,22 @@ function showUploadMsg(text, isError) {
   uploadMsgEl.classList.toggle("success", !isError);
 }
 
+// ── Clear tank / Close lobby buttons ──────────────────────
+
+if (btnClearTank) {
+  btnClearTank.addEventListener("click", () => {
+    sendMsg({ type: "clearTank" });
+    if (tankFileInput) tankFileInput.value = "";
+    showUploadMsg("", false);
+  });
+}
+
+if (btnCloseLobby) {
+  btnCloseLobby.addEventListener("click", () => {
+    sendMsg({ type: "closeLobby" });
+  });
+}
+
 // ── Start / Reset buttons ─────────────────────────────────
 
 if (btnStart) {
@@ -453,10 +505,22 @@ if (localFileInput) {
     try {
       localCode = await file.text();
       showLocalMsg(`Loaded ${file.name} (${localCode.length} bytes)`, false);
+      if (btnClearLocal) btnClearLocal.classList.remove("hidden");
     } catch (err) {
       showLocalMsg(`❌ Failed to read file: ${err.message}`, true);
       localCode = null;
+      if (btnClearLocal) btnClearLocal.classList.add("hidden");
     }
+    updateLocalButton();
+  });
+}
+
+if (btnClearLocal) {
+  btnClearLocal.addEventListener("click", () => {
+    localCode = null;
+    if (localFileInput) localFileInput.value = "";
+    showLocalMsg("", false);
+    btnClearLocal.classList.add("hidden");
     updateLocalButton();
   });
 }

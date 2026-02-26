@@ -24,9 +24,6 @@ const MAX_PLAYERS = CONSTANTS.MAX_PLAYERS;
 /** @type {Object<string, PlayerSlot>}  e.g. { p1: slot, p2: slot, ... } */
 const slots = {};
 
-/** Next slot number to assign (monotonically increasing). */
-let nextSlotNum = 1;
-
 /** @type {Set<string>} clientIds of spectators */
 const spectators = new Set();
 
@@ -73,7 +70,7 @@ export function joinLobby(ws) {
   const clientId = ws.clientId;
 
   if (Object.keys(slots).length < MAX_PLAYERS) {
-    const slotName = `p${nextSlotNum++}`;
+    const slotName = nextAvailableSlot();
     slots[slotName] = createSlot(clientId, ws);
     ws.slot = slotName;
     console.log(`[lobby] ${clientId} → ${slotName}`);
@@ -169,6 +166,18 @@ export function setCode(slotName, tankType, code) {
 }
 
 /**
+ * Clear stored code for a player slot.
+ * @param {string} slotName
+ */
+export function clearCode(slotName) {
+  const slot = slots[slotName];
+  if (!slot) return;
+  slot.tankType = null;
+  slot.code = null;
+  slot.hasCode = false;
+}
+
+/**
  * Broadcast current lobby state to all connected clients.
  */
 export function broadcastLobby() {
@@ -183,7 +192,7 @@ export function broadcastLobby() {
     });
   }
 
-  broadcast({ type: MSG_LOBBY, players, serverName });
+  broadcast({ type: MSG_LOBBY, players, serverName, hostSlot: getHostSlot() });
 }
 
 /**
@@ -191,11 +200,22 @@ export function broadcastLobby() {
  */
 export function resetLobby() {
   for (const key of Object.keys(slots)) delete slots[key];
-  nextSlotNum = 1;
   spectators.clear();
 }
 
 // ── Helpers ────────────────────────────────────────────────
+
+/**
+ * Find the lowest available slot name (p1, p2, … pN).
+ * @returns {string}
+ */
+function nextAvailableSlot() {
+  for (let i = 1; i <= MAX_PLAYERS; i++) {
+    const name = `p${i}`;
+    if (!(name in slots)) return name;
+  }
+  return `p${MAX_PLAYERS + 1}`; // should never happen (caller checks count)
+}
 
 /**
  * @param {string} clientId
