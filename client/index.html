@@ -43,12 +43,33 @@
         <!-- Local Test card -->
         <div class="card">
           <h2>Local Test</h2>
-          <p class="hint">Run your <code>tank.js</code> against a built-in bot — no server needed.</p>
+          <p class="hint">Run your <code>tank.js</code> against bots — no server needed.</p>
           <div class="file-row">
-            <label for="local-file">Select your <code>tank.js</code>:</label>
+            <label for="local-file">Your <code>tank.js</code>:</label>
             <input type="file" id="local-file" accept=".js" />
+            <button id="btn-clear-local" class="btn-remove hidden" title="Clear uploaded file">✕</button>
           </div>
           <p id="local-msg" class="upload-msg"></p>
+
+          <div class="opponent-mode">
+            <span class="opponent-label">Opponents:</span>
+            <label class="radio-label">
+              <input type="radio" name="opponent-mode" value="bot" checked /> Built-in Bot
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="opponent-mode" value="custom" /> Custom bots
+            </label>
+          </div>
+
+          <div id="custom-bots-section" class="custom-bots-section hidden">
+            <div class="file-row">
+              <label for="bot-files">Add bot files:</label>
+              <input type="file" id="bot-files" accept=".js" multiple />
+            </div>
+            <ul id="bot-list" class="bot-list"></ul>
+            <p id="bot-msg" class="upload-msg"></p>
+          </div>
+
           <button id="btn-local" disabled>Run vs Bot</button>
         </div>
 
@@ -61,7 +82,7 @@
       <p id="your-slot"></p>
       <table id="slot-table">
         <thead>
-          <tr><th>Slot</th><th>Player</th><th>Code</th><th>Type</th></tr>
+          <tr><th>Slot</th><th>Player</th><th>Code</th><th>Type</th><th id="th-action"></th></tr>
         </thead>
         <tbody id="slot-tbody">
           <!-- Rows added dynamically -->
@@ -72,12 +93,14 @@
         <div class="file-row">
           <label for="tank-file">Upload your <code>tank.js</code>:</label>
           <input type="file" id="tank-file" accept=".js" />
+          <button id="btn-clear-tank" class="btn-remove hidden" title="Clear uploaded code">✕</button>
         </div>
         <p id="upload-msg" class="upload-msg"></p>
       </div>
 
       <div class="lobby-buttons">
         <button id="btn-start" disabled>Start Match</button>
+        <button id="btn-close-lobby" class="btn-secondary hidden">Close Lobby</button>
         <button id="btn-back" class="btn-secondary">← Back</button>
       </div>
     </div>

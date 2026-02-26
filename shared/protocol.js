@@ -38,7 +38,36 @@ export const MSG_READY = "ready";
  */
 export const MSG_RESET_MATCH = "resetMatch";
 
+/**
+ * Host requests to kick a player from the lobby.
+ * @typedef {Object} KickPayload
+ * @property {"kick"}  type
+ * @property {string}  targetSlot - Slot name of the player to kick (e.g. "p2").
+ */
+export const MSG_KICK = "kick";
+
+/**
+ * Host requests to close the lobby and disconnect all players.
+ * @typedef {Object} CloseLobbyPayload
+ * @property {"closeLobby"} type
+ */
+export const MSG_CLOSE_LOBBY = "closeLobby";
+
+/**
+ * Player requests to clear their uploaded tank code.
+ * @typedef {Object} ClearTankPayload
+ * @property {"clearTank"} type
+ */
+export const MSG_CLEAR_TANK = "clearTank";
+
 // ── Server → Client ────────────────────────────────────────
+
+/**
+ * Sent to all clients when the host closes the lobby.
+ * @typedef {Object} LobbyClosedPayload
+ * @property {"lobbyClosed"} type
+ */
+export const MSG_LOBBY_CLOSED = "lobbyClosed";
 
 /**
  * Lobby state broadcast (sent whenever lobby changes).

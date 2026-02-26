@@ -1,6 +1,8 @@
 import { defineConfig } from "vite";
+import discoveryPlugin from "./vite-discovery-plugin.js";
 
 export default defineConfig({
+  plugins: [discoveryPlugin()],
   root: ".",
   server: {
     // Proxy WebSocket and API requests to the game server during dev

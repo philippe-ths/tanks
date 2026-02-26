@@ -200,6 +200,22 @@ h1 {
   background: #16213e;
 }
 
+.btn-kick {
+  background: transparent;
+  color: #e74c3c;
+  border: 1px solid #e74c3c;
+  border-radius: 3px;
+  cursor: pointer;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.85rem;
+  transition: background 0.15s;
+}
+
+.btn-kick:hover {
+  background: #e74c3c;
+  color: #fff;
+}
+
 #btn-start {
   padding: 0.5rem 1.5rem;
   font-size: 1rem;
@@ -272,6 +288,76 @@ h1 {
 #btn-local:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* ── Opponent mode toggle ────────────────── */
+
+.opponent-mode {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0.75rem 0;
+}
+
+.opponent-label {
+  font-size: 0.9rem;
+  color: #ccc;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+/* ── Custom bots section ─────────────────── */
+
+.custom-bots-section {
+  margin-bottom: 0.75rem;
+}
+
+.bot-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+}
+
+.bot-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0.6rem;
+  background: #1a1a2e;
+  border: 1px solid #333;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.bot-list .bot-name {
+  font-weight: 600;
+}
+
+.bot-list .bot-type {
+  color: #888;
+  margin-left: 0.5rem;
+}
+
+.bot-list .btn-remove {
+  background: none;
+  border: none;
+  color: #e74c3c;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0 0.3rem;
+  line-height: 1;
+}
+
+.bot-list .btn-remove:hover {
+  color: #ff6b6b;
 }
 
 /* ── Arena ───────────────────────────────────── */

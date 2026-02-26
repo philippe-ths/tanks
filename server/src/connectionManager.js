@@ -91,3 +91,14 @@ export function getClient(clientId) {
 export function getAllClients() {
   return clients;
 }
+
+/**
+ * Close all connected WebSocket clients.
+ */
+export function disconnectAll() {
+  for (const { ws } of clients.values()) {
+    if (ws.readyState === ws.OPEN || ws.readyState === ws.CONNECTING) {
+      ws.close();
+    }
+  }
+}

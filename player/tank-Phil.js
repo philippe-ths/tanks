@@ -1,5 +1,9 @@
 /**
  * player/tank.js
+ * 
+ * tankType: "light" or "heavy" - determines your tank's stats and appearance
+ * heavy tanks have more HP but are slower to move and turn
+ * light tanks are faster but more fragile
  *
  * Example player tank — edit this file to create your own strategy!
  *
@@ -12,19 +16,21 @@
  *
  * And these instant methods:
  *   tank.shoot()    — fire a projectile (one active at a time), returns boolean
- *   tank.log(msg)   — debug output
- *   tank.random()   — deterministic random number [0, 1)
  */
 
 export const tankType = "heavy";
 
 export default async function loop(tank) {
-  
-  const found = await tank.scan(-10, 10);
-  if (found) {
+
+  if ( await tank.scan(-15, 15) ) {
     tank.shoot();
+    await tank.moveForward();
   } else {
-    await tank.turnRight(20);
+    if ( await tank.scan(0, 180) ) {
+      await tank.turnRight(45);
+    } else {
+      await tank.turnLeft(45);
+    }
   }
 
 }
