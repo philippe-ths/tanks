@@ -172,9 +172,14 @@ export function tryStartMatch(requester) {
 
   // ── 7. Broadcast matchStart ──────────────────────────────
 
+  const lobbySlots = getAllSlots();
   const tanksInfo = {};
   for (const [slotName, code] of Object.entries(playerCodes)) {
-    tanksInfo[slotName] = { tankType: code.tankType };
+    const ls = lobbySlots[slotName];
+    tanksInfo[slotName] = {
+      tankType: code.tankType,
+      name: ls?.name ?? slotName,
+    };
   }
 
   broadcast({

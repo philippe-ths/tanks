@@ -177,6 +177,8 @@ function handleMessage(msg) {
       showArena();
       if (!renderer && arenaCanvas) renderer = createRenderer(arenaCanvas);
       if (renderer) renderer.setMatchInfo(msg);
+      // Only the host can reset the match
+      if (btnReset) btnReset.classList.toggle("hidden", slot !== lobbyHostSlot);
       break;
 
     case "state":
