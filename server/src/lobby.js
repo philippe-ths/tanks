@@ -166,6 +166,16 @@ export function setCode(slotName, tankType, code) {
 }
 
 /**
+ * Set the display name for a player slot.
+ * @param {string} slotName
+ * @param {string} name
+ */
+export function setPlayerName(slotName, name) {
+  const slot = slots[slotName];
+  if (slot) slot.name = name;
+}
+
+/**
  * Clear stored code for a player slot.
  * @param {string} slotName
  */

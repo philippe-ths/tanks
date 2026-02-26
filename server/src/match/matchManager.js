@@ -123,6 +123,20 @@ export function tryStartMatch(requester) {
     onTick(events) {
       resolveActions(events);
 
+      // Stop runtimes for tanks that just died (combat damage).
+      // Without this their pending action Promise never resolves
+      // and the watchdog fires a 5 s timeout error.
+      if (playerRuntimes && world) {
+        for (const [s, tank] of Object.entries(world.tanks)) {
+          if (tank.hp <= 0 && playerRuntimes[s]?.running) {
+            const api = tankApis[s];
+            const resolve = api._resolvePending;
+            if (resolve) { api._clearPending(); resolve(); }
+            playerRuntimes[s].stop();
+          }
+        }
+      }
+
       tickCount++;
       if (tickCount >= ticksPerBroadcast) {
         tickCount = 0;
