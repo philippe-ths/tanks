@@ -58,6 +58,9 @@ function getPlayerColors(slot) {
   return PLAYER_COLORS[slotIndex(slot) % PLAYER_COLORS.length];
 }
 
+/** Module-level map of slot → display name, set by setMatchInfo(). */
+let nameMap = {};
+
 // ── Public API ─────────────────────────────────────────────────────────
 
 /**
@@ -142,6 +145,13 @@ export function createRenderer(canvas) {
     setMatchInfo(info) {
       matchInfo = info;
       matchResult = null; // reset on new match
+      // Build name map: slot → display name (fall back to slot label)
+      nameMap = {};
+      if (info?.tanks) {
+        for (const [s, data] of Object.entries(info.tanks)) {
+          nameMap[s] = data.name && data.name !== s ? data.name : s.toUpperCase();
+        }
+      }
     },
 
     /**
@@ -347,7 +357,7 @@ function drawTank(ctx, t) {
   ctx.fillStyle = colors.body;
   ctx.font = "bold 11px system-ui";
   ctx.textAlign = "center";
-  ctx.fillText(t.slot.toUpperCase(), t.x, t.y - labelOffset);
+  ctx.fillText(nameMap[t.slot] ?? t.slot.toUpperCase(), t.x, t.y - labelOffset);
 }
 
 // ── HUD drawing ────────────────────────────────────────────────────────
@@ -392,7 +402,8 @@ function drawHUD(ctx, state, matchInfo, matchResult) {
     ctx.fillStyle = "#ccc";
     ctx.font = "bold 12px system-ui";
     ctx.textAlign = "left";
-    ctx.fillText(`${t.slot.toUpperCase()}  ${typeLabel}`, x, y + 11);
+    const displayName = nameMap[t.slot] ?? t.slot.toUpperCase();
+    ctx.fillText(`${displayName}  ${typeLabel}`, x, y + 11);
 
     // Bar background
     const barY = y + 15;
@@ -454,8 +465,9 @@ function drawHUD(ctx, state, matchInfo, matchResult) {
 
       ctx.fillStyle = winColor;
       ctx.font = "bold 32px system-ui";
+      const winnerLabel = nameMap[matchResult.winner] ?? matchResult.winner.toUpperCase();
       ctx.fillText(
-        `${matchResult.winner.toUpperCase()} WINS!`,
+        `${winnerLabel} WINS!`,
         ARENA_W / 2,
         ARENA_H / 2 + 4,
       );
