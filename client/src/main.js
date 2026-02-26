@@ -71,6 +71,7 @@ const btnBack     = document.getElementById("btn-back");
 const btnCloseLobby = document.getElementById("btn-close-lobby");
 const btnClearTank = document.getElementById("btn-clear-tank");
 const btnClearLocal = document.getElementById("btn-clear-local");
+const playerNameInput = document.getElementById("player-name");
 const localFileInput = document.getElementById("local-file");
 const localMsgEl  = document.getElementById("local-msg");
 const btnLocal    = document.getElementById("btn-local");
@@ -144,6 +145,9 @@ function handleMessage(msg) {
       slot = msg.slot ?? null;
       setStatus(`Connected — slot: ${slot ?? "spectator"}`);
       console.log("[hello]", msg);
+      // Send stored name (if any) so the server knows our display name
+      { const nameVal = playerNameInput?.value.trim();
+        if (nameVal) sendMsg({ type: "join", name: nameVal }); }
       break;
 
     case "lobby":
@@ -275,9 +279,9 @@ function renderLobby() {
     }
   }
 
-  // Enable start when ≥ 2 players have code
+  // Enable start only for the host when ≥ 2 players have code
   const readyCount = lobbyPlayers.filter((p) => p.hasCode).length;
-  if (btnStart) btnStart.disabled = readyCount < 2;
+  if (btnStart) btnStart.disabled = readyCount < 2 || !isHost;
 
   // Show/hide host-only close lobby button
   if (btnCloseLobby) {
@@ -464,6 +468,13 @@ if (btnReset) {
 
 if (btnBack) {
   btnBack.addEventListener("click", () => showLanding());
+}
+
+if (playerNameInput) {
+  playerNameInput.addEventListener("change", () => {
+    const name = playerNameInput.value.trim();
+    if (name) sendMsg({ type: "join", name });
+  });
 }
 
 // ── Local test mode ────────────────────────────────────────

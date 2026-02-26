@@ -8,6 +8,7 @@ import {
   joinLobby, leaveLobby, broadcastLobby,
   getSlotForClient, setCode, clearCode, getSlot, getHostSlot,
   setServerName, getServerName, getLobbyInfo, resetLobby,
+  setPlayerName,
 } from "./lobby.js";
 import { tryStartMatch, stopMatch, isMatchRunning } from "./match/matchManager.js";
 import {
@@ -110,17 +111,29 @@ wss.on("connection", (ws, req) => {
  */
 function handleMessage(ws, msg) {
   switch (msg.type) {
-    case MSG_JOIN:
-      console.log(`[msg] join from ${ws.clientId}:`, msg.name);
+    case MSG_JOIN: {
+      const joinSlot = getSlotForClient(ws.clientId);
+      if (joinSlot !== "spectator" && typeof msg.name === "string" && msg.name.trim()) {
+        setPlayerName(joinSlot, msg.name.trim().slice(0, 32));
+        broadcastLobby();
+      }
       break;
+    }
 
     case MSG_SUBMIT_TANK:
       handleSubmitTank(ws, msg);
       break;
 
-    case MSG_READY:
+    case MSG_READY: {
+      const reqSlot = getSlotForClient(ws.clientId);
+      const host = getHostSlot();
+      if (reqSlot !== host) {
+        send(ws, { type: MSG_ERROR, message: "Only the host can start the match." });
+        break;
+      }
       tryStartMatch(ws);
       break;
+    }
 
     case MSG_RESET_MATCH:
       handleResetMatch(ws);
