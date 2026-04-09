@@ -1,12 +1,16 @@
 # Tank Coding Game (LAN + Local)
 
-A top-down game where you program a tank using JavaScript and a small Tank API. You control your tank with:
+A top-down game where you program a tank using JavaScript and a small Tank API. Built as a hands-on way to learn coding fundamentals — `if/else` statements, calling functions, and `async/await` — through gameplay.
+
+You control your tank with:
 
 - `if` statements
 - calling methods (`tank.turnLeft()`, `tank.scan()`, etc.)
 - `async/await` for actions that take time
 
 Players typically edit **one file**: `player/tank.js`.
+
+**Tech Stack:** Node.js, Express, WebSocket (ws), Vite, Canvas
 
 ---
 
@@ -139,9 +143,7 @@ Notes:
 
 ---
 
-## Scripts (suggested)
-
-These may vary depending on final setup:
+## Scripts
 
 - `npm run host` → start server on `0.0.0.0:3000`
 - `npm run dev` → start client dev server
@@ -154,4 +156,3 @@ These may vary depending on final setup:
 
 - `docs/ARCHITECTURE.md` — system design and component overview
 - `docs/SPEC.md` — gameplay rules, Tank API, networking contract
-- `docs/PROMPTS.md` — step-by-step Copilot prompts to build the app

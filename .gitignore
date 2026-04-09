@@ -2,3 +2,13 @@ node_modules/
 client_dist/
 .DS_Store
 *.log
+.env
+
+# AI workflow
+CLAUDE.md
+.claude/
+.ai-policy/
+.githooks/
+ai-workflow.md
+project-spec.md
+project-spec-template.md
